@@ -1,0 +1,581 @@
+---
+title: "EMOS coding lab 2021 ed.<br>Time series clustering for Population and Migration in Official Statistics"
+author: "Topalovic A. & Villa M."
+date: "11/10/2021"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Academic contacts of the authors:**
+<br>**Topalovic Ana** | Mendel University - Brno (CZ) : xtopalov@mendelu.cz
+<br>**Villa Marco** | University of Bergamo - Bergamo (IT) : m.villa43@studenti.unibg.it
+<br>
+<br>
+```{r libraries, echo=FALSE, message=FALSE, warning=FALSE}
+library(eurostat)
+library(shiny)
+library(tidyverse)
+library(data.table)
+library(plotly)
+```
+## Motivation
+Due to the trend of world and European integration processes and many agreements concluded in the last few decades (for example, the European Single Market, founded in 1993, which also includes the free movement of persons within the EU member state), the migration trend in EU countries has been growing rapidly since the early 1990s. Varying from country to country, in some Member States the number of migrants has increased several times in the mentioned period. But which European Union countries are most susceptible to this trend? What is it that attracts migrants to certain countries and what is it that rejects them from others? What is the level of integration capacity in EU countries and what affects it? What is the level of integration capacity in EU countries and what affects it? And finally, what is the structure of the population that leaves and immigrates to certain countries and what are differences between them?
+<br>
+We decided to start our analysis with these questions in mind, firstly looking for a possible relationship between the characteristics of countries and the 2019 data on immigration and emigration. 
+<br>
+
+## Code and datasets behind our plots
+
+The code will not be printed in this html file. To see it, please contact the authors for a full access to the RMarkDown file. For our analysis, we integrated togheter several open-access datasets provided by Eurostat:  migr_imm5prv, migr_emi3nxt, tec00114, nama_10_gdp, migr_pop1ctz, migr_resshare, t2020_50, lfsa_urgacob, edat_lfs_9903, earn_ses_pub2s and hlth_ehis_ss1e. See the RMarkDown file for further details.
+```{r dataimport, echo=FALSE, message=FALSE, warning=FALSE}
+#loead the rds here. For more details on how it was created, check the main script files
+load("/Users/marco/Google Drive Personale/Formazione/3_Unibg/2021-22/CODING LABS EMOS/wd/task1/delivery2/task1_final_V2_findt.RData")
+```
+
+```{r datamanipulation, echo=F, message=FALSE, warning=FALSE}
+# EXTRA DATA MANIPULATION: ------
+# for more details, see the full script
+countries <- full_join(dt2_final_complet,dt2_final_reach)
+countries <- countries[order(geo),] %>% select("geo") %>% unique()
+```
+
+
+```{r plot 1-2A, echo=F, message=FALSE, warning=FALSE}
+# PLOT -----
+rm(fig1)
+fig1 <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                       geo !="LU" &
+                                       geo != "CY" &
+                                       geo != "IS" &
+                                       geo != "MT"),
+                x = ~ emi_ratio,
+                y = ~ immi_ratio,
+                color = ~GDPpercap,
+                #size = ~sqrt(popsize),
+                colors = "Oranges",
+                type = 'scatter',
+                mode = 'markers',
+                # marker = list(symbol = 'circle',
+                #                sizemode = 'diameter',
+                #                line = list(width = 2,
+                #                            color = '#FFFFFF')),
+                text = ~paste('Country:',geo,
+                              "<br>GDP per cap <br> (PPS, EU average == 100):",GDPpercap,
+                              "<br> Total population (units):",popsize))
+
+fig1 <- fig1 %>% layout(xaxis = list(title = 'Emigration rate (% of tot. population)'),
+                        yaxis = list(title = 'Immigration rate (% of tot. population)'),
+                        showlegend = FALSE)
+
+fig1 <- fig1 %>% add_segments(x=0,
+                              y=0,
+                              xend=2,
+                              yend=2,
+                              inherit=F)
+
+```
+```{r plot 1-2B, echo=F, message=FALSE, warning=FALSE}
+# PLOT -----
+rm(fig1B)
+fig1B <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                       geo !="LU" &
+                                       geo != "CY" &
+                                       geo != "IS" &
+                                       geo != "MT"),
+                x = ~ emi_value,
+                y = ~ immi_value,
+                color = ~GDPpercap,
+                size = ~sqrt(popsize),
+                type = 'scatter',
+                mode = 'markers',
+                colors="Oranges",
+                marker = list(symbol = 'circle',
+                              sizemode = 'diameter',
+                              line = list(width = 2,
+                                          color = '#FFFFFF'),
+                              colorbar = list(title = "PROVA")), # doesn't work :-(
+                text = ~paste('Country:',geo,
+                              "<br>GDP per cap <br> (PPS, EU average == 100):",GDPpercap,
+                              "<br> Total population (units):",popsize))
+
+fig1B <- fig1B %>% layout(xaxis = list(title = 'Emigration (units)'),
+                        yaxis = list(title = 'Immigration (units)'),
+                        showlegend = FALSE)
+
+fig1B <- fig1B %>% add_segments(x=0,
+                              y=0,
+                              xend=1000000,
+                              yend=1000000,
+                              inherit=F)
+
+fig2B <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                       geo !="LU" &
+                                       geo != "CY" &
+                                       geo != "IS" &
+                                       geo != "MT"),
+               x = ~ emi_value,
+                y = ~ immi_value,
+                color = ~GDP,
+                size = ~sqrt(popsize),
+                colors = "Blues",
+                type = 'scatter',
+                mode = 'markers',
+                marker = list(symbol = 'circle',
+                              sizemode = 'diameter',
+                              line = list(width = 2,
+                                          color = '#FFFFFF')),
+                text = ~paste('Country:',geo,
+                              "<br>GDP (in M. of €):",GDP,
+                              "<br> Total population (units):",popsize))
+
+fig2B <- fig2B %>% layout(xaxis = list(title = 'Emigration (units)'),
+                        yaxis = list(title = 'Immigration (units)'),
+                        showlegend = FALSE)
+
+fig2B <- fig2B %>% add_segments(x=0,
+                              y=0,
+                              xend=1000000,
+                              yend=1000000,
+                              inherit=F)
+```
+## Plots and comments - section 1
+<br>
+The first plot attempts to explain the relationship between the number of emigrants (X axis) and the number of immigrants (Y axis) and to examine whether they depend on the economic development of the country. We took the stock value of immigration and emigration referred to 2019. The size of the bubble represents the population size of a country and the color represents the size of the Gross Domestic Product, as one of the most important indicators for economic activity. On the left side of the plot,  GDP for 2019 is measured per capita in Purchasing Power Standards (PPS) to eliminate the differences in price levels between countries and allowing to compare the volume of GDP within the EU Member States. On the right side of the plot, GDP is measured in current prices, million euro, to examine the relationship between population size of a country and total volume of GDP. excluded countries here!.
+<br>
+It is obvious from plot that both the number of emigrants and the number of immigrants are highly correlated with the population size of the country as well as that numbers of emigrants and numbers of immigrants are correlated between themselves. Further the total volume of GDP seems mainly correlated to the population size. On the other hand, the left side of the plot tells us that GDP per capita (more relevant for comparing countries) is not so correlated with respect to the number of migrants. This can be clearly seen in the example of Spain, which, despite its below-average GDP per capita, has a fairly large number of immigrants, even in relation to the number of emigrants.
+<br>
+Finally, we noticed that ll the most populated countries faced more immigration than emigration, and this is true for the most of EU countries. Of course, there are still some exceptions, like Romania (202.000k immigrants vs 233.000k emigrants).
+<br>
+<br>
+```{r bubbleplotB, echo=F, message=FALSE, warning=FALSE, fig.align = "left", fig.cap="Plot 1: **Relationship between the total number of emigrants and immigrants and the population size**<br> _(stock value from 2019 - Integrated datasets of multiple eurostat sources)_"}
+subplot(fig1B, fig2B, shareX = T, shareY = T)
+```
+<br>
+<br>
+In order to better compare emigration and immigration between countries, we controlled for these measurements for each country’s dimension. On this plot, immigration and emigration rates were used instead of the total numbers of immigrants and emigrants, calculated as a proportion of immigrants and emigrants in the total population size of a country. Few countries (Luxemburg, Malta and Cyprus) where excluded from the analysis due to their outlier characteristics, especially in term of country size. The color represents the volume of GDP per capita in PPS.
+<br>
+The 45-degree line indicates the same number of immigrants and emigrants, so if the country is below this line, it means that the outflow of migrants in this country is higher than the inflow of migrants, while countries above this line have a higher inflow of migrants, which is the case for most EU countries. Explanation of this phenomenon lies in the fact that immigration flows into Europe in general are wider than emigration flows, partly due to the trend of immigration flows of the asylum seekers from the conflict zone. As already expressed in plot 1, a clear correlation between immigration, emigration and GDPper cap cannot be found
+<br>
+```{r bubbleplotA, echo=F, message=FALSE, warning=FALSE, fig.align = "left", fig.cap="Plot 2: **Relationship between the total number of emigrants and immigrants, controlling for population size.**<br> _(stock value from 2019 - Integrated datasets of multiple eurostat sources)_"}
+fig1
+```
+## Plots and comments - section 2
+<br>
+Plots with the share of long term permits and immigration rates
+Several following plots will try to show relationship between the integration capacity and the immigration rate of the EU countries. On the x-axis is the immigration rate (total number of immigrants divided by the population size), while on the y-axis is the share of long term permits on the total number of permits, which we considered as a proxy for integration capacity. Bubble size is proportional to the squared root of GDP per capita. As before, we are always looking at 2019 stock values.
+<br>
+Countries located in the upper right quarter (e.g. Estonia) have high immigration inflow but also manage to integrate these migrants into society to a large extent. Countries in the lower right quarter (e.g. Lithuania) have high immigration inflows, however they do not manage to integrate them into society to a large degree. Countries in the upper left quarter have a small inflow of migrants, who successfully manage to integrate into society, while countries in the lower left quarter (e.g. Slovakia) have a small inflow of migrants who fail to integrate into society.
+<br>
+<br>
+Several indicators of the economic, social, and educational system are implemented by color scheme in different plots, looking for possible explanations for both the inflow of migrants and rate of their integration. Lower unemployment rate (tab 2) as well as higher average wage (tab 6) can be considered as strong pull factors for migrants who emigrate looking for a job. Perceived social support (tab 4) and lower risk of poverty (tab 1) could also be pull factors for migrants who are not socially secured in their home countries, especially when it comes to vulnerable groups of migrants. The percentage of highly educated population (tab 5) could be an indicator of the success of the education system, which is one of the key factors when it comes to the group of migrants seeking better education than the one, they have in their home country. Where it was possible (unemployment and social support index), we considered values specifically referred to foreign born groups.
+<br>
+<br>
+Regarding the described indicators of the development of the economic, social, and educational system, no specific link was found between these indicators and immigration rate nor with the integration capacity – color scheme does not give any explanatory meaning. However, GDPs per capita and the above listed indicators of the development of the economic, social and educational system seems to be in some way correlated. This can be particularly noted looking at the relationship between GDPs per capita (size of bubbles) and Hourly wage in PPS (color of bubble, tab 6).
+<br>
+<br>
+```{r shinyplot12, echo=F, message=FALSE, warning=FALSE}
+# PLOT -----
+
+shinyApp(
+  ### ui
+  ui <- fluidPage(
+    titlePanel("Sect. 2: Long term immigration and welfare in hosting countries"),
+    tabsetPanel(
+      tabPanel("Tab 1: Risk of Poverty and social excl.",plotlyOutput("fig7")),
+      tabPanel("Tab 2: Unemployment rate (foreign born)",plotlyOutput("fig8")),
+      tabPanel("Tab 3: Social support (foreign born",plotlyOutput("fig9")),
+      tabPanel("Tab 4: Higher isced levels", plotlyOutput("fig10")),
+      tabPanel("Tab 5: Hourly wage in PPS", plotlyOutput("fig11"))
+    )
+  ),
+  ### server  
+  server <- function(input, output) {
+    output$fig7 <- renderPlotly({
+      fig7 <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                            geo !="LU" &
+                                            geo != "CY" &
+                                            geo != "IS" &
+                                            geo != "MT"),
+                      x = ~ immi_ratio,
+                      y = ~ ltperm,
+                      color = ~pov_risk,
+                      size = ~sqrt(GDPpercap),
+                      colors = "Oranges",
+                      type = 'scatter',
+                      mode = 'markers',
+                      marker = list(symbol = 'circle',
+                                    sizemode = 'diameter',
+                                    line = list(width = 2,
+                                                color = '#FFFFFF')),
+                      text = ~paste('Country:',geo,
+                                    "<br>GDP per cap <br> (PPS, EU average == 100):",GDPpercap,
+                                    "<br> Total population (units):",popsize,
+                                    "<br>% of people at risk of poverty and social excl.:", pov_risk))
+      
+      fig7 <- fig7 %>% layout(title = 'Immigration share v. long term permits, 2019',
+                              xaxis = list(title = 'Immigrants as % of total population'),
+                              yaxis = list(title = 'Long term permit share (%)'),
+                              showlegend = FALSE)
+    })
+    output$fig8 <- renderPlotly({
+      fig8 <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                            geo !="LU" &
+                                            geo != "CY" &
+                                            geo != "IS" &
+                                            geo != "MT"),
+                      x = ~ immi_ratio,
+                      y = ~ ltperm,
+                      color = ~unemp_for,
+                      size = ~sqrt(GDPpercap),
+                      colors = "Oranges",
+                      type = 'scatter',
+                      mode = 'markers',
+                      marker = list(symbol = 'circle',
+                                    sizemode = 'diameter',
+                                    line = list(width = 2,
+                                                color = '#FFFFFF')),
+                      text = ~paste('Country:', geo,
+                                    "<br>GDP per cap <br> (PPS, EU average == 100):",GDPpercap,
+                                    "<br>Unemployment rate (foreign born):", unemp_for,
+                                    "<br>Unemployment rate (entire pop.):", unemp_all))
+      
+      fig8 <- fig8 %>% layout(title = 'Immigration share v. long term permits, 2019',
+                              xaxis = list(title = 'Immigrants as % of total population'),
+                              yaxis = list(title = 'Long term permit share (%)'),
+                              showlegend = FALSE)
+    })
+    output$fig9 <- renderPlotly({
+      fig9 <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                            geo !="LU" &
+                                            geo != "CY" &
+                                            geo != "IS" &
+                                            geo != "MT"),
+                      x = ~ immi_ratio,
+                      y = ~ ltperm,
+                      color = ~socsupp_for,
+                      size = ~sqrt(GDPpercap),
+                      colors = "Oranges",
+                      type = 'scatter',
+                      mode = 'markers',
+                      marker = list(symbol = 'circle',
+                                    sizemode = 'diameter',
+                                    line = list(width = 2,
+                                                color = '#FFFFFF')),
+                      text = ~paste('Country:',geo,
+                                    "<br>GDP per cap <br> (PPS, EU average == 100):",GDPpercap,
+                                    "<br> % of \"strong perception\" (for foreign born):",socsupp_for,
+                                    "<br> % of \"strong perception\" (for the entire pop.)",socsupp_all))
+                      
+                      fig9 <- fig9 %>% layout(title = 'Immigration share v. long term permits, 2019',
+                                              xaxis = list(title = 'Immigrants as % of total population'),
+                                              yaxis = list(title = 'Long term permit share (%)'),
+                                              showlegend = FALSE)
+    })
+        output$fig10 <- renderPlotly({
+          fig10 <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                                 geo !="LU" &
+                                                 geo != "CY" &
+                                                 geo != "IS" &
+                                                 geo != "MT"),
+                      x = ~ immi_ratio,
+                      y = ~ ltperm,
+                      color = ~isced_third,
+                      size = ~sqrt(GDPpercap),
+                      colors = "Oranges",
+                      type = 'scatter',
+                      mode = 'markers',
+                      marker = list(symbol = 'circle',
+                                    sizemode = 'diameter',
+                                    line = list(width = 2,
+                                                color = '#FFFFFF')),
+                      text = ~paste('Country:',geo,
+                                    "<br>GDP per cap <br> (PPS, EU average == 100):",GDPpercap,
+                                    "<br>Total population (units):",popsize,
+                                    "<br>% of tertiary educated pop.:", isced_third))
+      
+      fig10 <- fig10 %>% layout(title = 'Immigration share v. long term permits, 2019',
+                              xaxis = list(title = 'Immigrants as % of total population'),
+                              yaxis = list(title = 'Long term permit share (%)'),
+                              showlegend = FALSE)
+    })
+    output$fig11 <- renderPlotly({
+      fig11 <- plot_ly(dt_final %>% filter(geo != "IE" &
+                                             geo !="LU" &
+                                             geo != "CY" &
+                                             geo != "IS" &
+                                             geo != "MT"),
+                      x = ~ immi_ratio,
+                      y = ~ ltperm,
+                      color = ~wage_pps,
+                      size = ~sqrt(GDPpercap),
+                      colors = "Oranges",
+                      type = 'scatter',
+                      mode = 'markers',
+                      marker = list(symbol = 'circle',
+                                    sizemode = 'diameter',
+                                    line = list(width = 2,
+                                                color = '#FFFFFF')),
+                      text = ~paste('Country:',geo,
+                                    "<br>GDP per cap <br> (PPS, EU average == 100):",GDPpercap,
+                                    "<br>Total population (units):",popsize,
+                                    "<br>Median hourly wage (in PPS):",wage_pps))
+      
+      fig11 <- fig11 %>% layout(title = 'Immigration share v. long term permits, 2019',
+                              xaxis = list(title = 'Immigrants as % of total population'),
+                              yaxis = list(title = 'Long term permit share (%)'),
+                              showlegend = FALSE)
+    })
+  },
+  options = list(height = 550)
+)
+```
+
+## Plots and comments - section 3
+<br>
+The following two plots show the structure of immigrants and emigrants according to gender and age group. For this purpose, two countries with similar characteristics pronounced in the previous plot (United Kingdom and Spain) were selected. We decided to keep UK, since at the end of 2019 the country was still part of EU and it was still sharing the benefits of a strenghter bilateral agreement on migration with other EU member states. In the second plot, bars stand for the total percentage of immigrants to UK and Spain for both genders separately. The Y axis represents percentages of each age group in the total number of immigrants.
+<br>
+We grouped our classes taking into account the motivation that a person will encounter in its decision of leaving/reaching a country, that can be related differently to studying, working, or retiring purposes. For this reason, we ended up with five age classes: 19 y.o. or younger, 20-34 y.o., 35-49 y.o., 50-64 y.o., 65 y.o. or older. Again, the stock values for 2019 were used.
+<br>
+Although both selected countries are characterized by similar values of population size, GDP per capita and numbers of immigrants and emigrants, the structure of immigrants in these countries are far from similar. In the UK, the highest percentage (more than 60%) of immigrants of both genders belong to the age group of 20 to 34. This age group represents only around 40% in Spain. In general, all age groups appear to be much more evenly distributed in Spain than in the UK. It is also important to note that immigrants to Spain in the two oldest age groups (50-64, 65 or older) make up a not so negligible percentage as in the case of the UK (below 5% for both genders).
+<br>
+<br>
+```{r immishiny, echo=FALSE}
+shinyApp(
+  ui <- fluidPage(
+    titlePanel("Sect. 3: Age composition of emigration and immigration"),
+    
+    sidebarLayout(
+      sidebarPanel(
+        selectInput("country_sel1",
+                    label="Left country",
+                    choices=countries,
+                    selected="UK",
+                    multiple=F,
+                    selectize=F,
+                    width="400px",
+                    size=1),
+        selectInput("country_sel2",
+                    label="Right country",
+                    choices=countries,
+                    selected="ES",
+                    multiple=F,
+                    selectize=F,
+                    width="400px",
+                    size=1),
+        width=2),
+      mainPanel(splitLayout(
+        plotlyOutput("fig3"),
+        plotlyOutput("fig4")
+      )
+      )
+    )
+  )
+  ,
+  
+  # SERVER -----
+  server <- function(input, output) {
+    
+    data_sel_immi <- reactive ({
+      ifelse(input$country_sel1 %in% dt2_final_complet$geo,
+             "dt2_final_complet",
+             "dt2_final_reach")
+    })
+    
+    
+    data_sel_immi2 <- reactive ({
+      ifelse(input$country_sel2 %in% dt2_final_complet$geo,
+             "dt2_final_complet",
+             "dt2_final_reach")
+    })
+    
+    output$fig3 <- renderPlotly({
+      fig3 <- plot_ly(get(data_sel_immi())[geo==input$country_sel1] %>% select(!c("age","perc_immi","values")) %>% unique() %>% arrange(grouped_class), #manual selection of the country
+                      x = ~sex,
+                      y = ~perc_immi_bygroup,
+                      type = 'bar',
+                      text = ~paste("% on total <br>",ifelse(sex=="M","male","female"),"immigrants:",  round(perc_immi_bygroup, digit=2),"%",
+                                    "<br>Age class:",grouped_class,
+                                    "<br>Total immigrants of this gender:",ifelse(sex=="M",male,female)),
+                      color = ~grouped_class,
+                      legendgroup = ~grouped_class,
+                      showlegend=F)
+      
+      a <- list(
+        x = 0.5,
+        y = 1,
+        text = paste("Immigrants in ",input$country_sel1," (stock %)"),
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "bottom",
+        align = "center",
+        showarrow = F)
+      
+      fig3 <- fig3 %>% layout(barmode = 'stack',
+                              yaxis = list(title = "% on total gender class"),
+                              annotations = a)
+    })
+    
+    output$fig4 <- renderPlotly({
+      fig4 <- plot_ly(get(data_sel_immi2())[geo==input$country_sel2] %>% select(!c("age","perc_immi","values")) %>% unique() %>% arrange(grouped_class), #manual selection of the country
+                      x = ~sex,
+                      y = ~perc_immi_bygroup,
+                      type = 'bar',
+                      text = ~paste("% on total <br>",ifelse(sex=="M","male","female"),"immigrants:",  round(perc_immi_bygroup, digit=2),"%",
+                                    "<br>Age class:",grouped_class,
+                                    "<br>Total immigrants of this gender:",ifelse(sex=="M",male,female)),
+                      color = ~grouped_class,
+                      legendgroup = ~grouped_class,
+                      showlegend=F)
+      
+      a <- list(
+        x = 0.5,
+        y = 1,
+        text = paste("Immigrants in ",input$country_sel2," (stock %)"),
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "bottom",
+        align = "center",
+        showarrow = F)
+      
+      fig4 <- fig4 %>% layout(barmode = 'stack',
+                              yaxis = list(title = "% on total gender class"),
+                              annotations = a)
+    })
+  },options = list(height = 480)
+)
+```
+<br>
+<br>
+The last plot shows the same information but for the structure of emigrants. From this plot it can be noticed that the differences in the structure of emigrants for these two countries are similar to those for immigrants. What is noteworthy in this case, that differs from the previous plot, is that much lower percentage of the population in the age group 19 or younger leaves the UK than Spain.
+<br>
+<br>
+```{r emishiny, echo=FALSE}
+shinyApp(
+  ui <- fluidPage(
+    sidebarLayout(
+      sidebarPanel(
+        selectInput("country_sel3",
+                    label="Left country",
+                    choices=countries,
+                    selected="UK",
+                    multiple=F,
+                    selectize=F,
+                    width="400px",
+                    size=1),
+        selectInput("country_sel4",
+                    label="Right country",
+                    choices=countries,
+                    selected="ES",
+                    multiple=F,
+                    selectize=F,
+                    width="400px",
+                    size=1),
+        width=2),
+      mainPanel(splitLayout(
+        plotlyOutput("fig5"),
+        plotlyOutput("fig6")
+      )
+      )
+    )
+  )
+  ,
+  
+  # SERVER -----
+  server <- function(input, output) {
+    
+    data_sel_emi <- reactive ({
+      ifelse(input$country_sel3 %in% dt3_final_complet$geo,
+             "dt3_final_complet",
+             "dt3_final_reach")
+    })
+    
+    
+    data_sel_emi2 <- reactive ({
+      ifelse(input$country_sel4 %in% dt3_final_complet$geo,
+             "dt3_final_complet",
+             "dt3_final_reach")
+    })
+    
+    output$fig5 <- renderPlotly({
+      fig5 <- plot_ly(get(data_sel_emi())[geo==input$country_sel3]
+                      %>% select(!c("age","perc_emi","values"))
+                      %>% unique()
+                      %>% arrange(grouped_class), #here we will include selection of the country
+                      x = ~sex,
+                      y = ~perc_emi_bygroup,
+                      type = 'bar',
+                      text = ~paste("% on total <br>",
+                                    ifelse(sex=="M","male","female"),
+                                    "emigrants:",
+                                    round(perc_emi_bygroup, digit=2),
+                                    "%",
+                                    "<br> Age class:",grouped_class,
+                                    "<br>Total emigrants of this gender:",ifelse(sex=="M",male,female)),
+                      color = ~grouped_class,
+                      legendgroup = ~grouped_class,
+                      showlegend=F)
+      
+      b <- list(
+        x = 0.5,
+        y = 1,
+        text = paste("Emigrants in ",input$country_sel3," (stock %)"),
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "bottom",
+        align = "center",
+        showarrow = F)
+      
+      fig5 <- fig5 %>% layout(barmode = 'stack',
+                              yaxis = list(title = "% on total gender class"),
+                              annotations = b)
+  })
+    output$fig6 <- renderPlotly({
+      fig6 <- plot_ly(get(data_sel_emi2())[geo==input$country_sel4] %>% select(!c("age","perc_emi","values")) %>% unique() %>% arrange(grouped_class), #here we will include selection of the country
+                      x = ~sex,
+                      y = ~perc_emi_bygroup,
+                      type = 'bar',
+                      text = ~paste("% on total <br>",ifelse(sex=="M","male","female"),"emigrants:", round(perc_emi_bygroup, digit=2),"%",
+                                    "<br> Age class:",grouped_class,
+                                    "<br>Total emigrants of this gender:",ifelse(sex=="M",male,female)),
+                      color = ~grouped_class,
+                      legendgroup = ~grouped_class,
+                      showlegend=F)
+      
+      b <- list(
+        x = 0.5,
+        y = 1,
+        text = paste("Emigrants in ",input$country_sel4," (stock %)"),
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "bottom",
+        align = "center",
+        showarrow = F)
+      
+      fig6 <- fig6 %>% layout(barmode = 'stack',
+                              yaxis = list(title = "% on total gender class"),
+                              annotations = b)
+    })
+  },
+    options = list(height = 480)
+)
+```
+
+## Conclusion and next steps
+We saw that migration in the EU are not so correlated  to the economic development of the country as on its population size. We could also note that countries characterized by the high number of immigrants are also characterized by the high number of emigrants, which might seem surprising, given that it can be expected that what attracts migrants to a particular country also affects the inhabitants of that country not to be motivated to emigrate. However, when we controlled for population dimension, this relationship does not hold anymore.
+<br>
+Discoveries on 5 plots
+<br>
+Still, the question arises, what are the main reasons for migrants to choose a particular country to immigrate to.
+<br>
+Further topic for research that occurred is what is it that attracts and rejects different age groups to and from certain countries. We guessed if those differences goes beyond generically speaking better opportunities. In this sense, we thought also to cultural and religious similarities between countries, common languages, and government relationships in general. Questions that are still open in our mind and in the future could be investigated through dynamic flows related to migrations.
+<br>
+<br>
+<br>
+<br>
